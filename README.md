@@ -115,15 +115,6 @@ This creates the two domains required for CycleGAN training.
 
 ---
 
-## Next Steps
-
-- Implement CycleGAN architecture  
-- Add CBAM attention modules  
-- Train the model  
-- Evaluate using PSNR and SSIM  
-- Analyze the impact of attention  
-
----
 
 ## Objective
 
@@ -132,7 +123,7 @@ The objective of this project is to:
 - Understand GANs deeply  
 - Apply them to medical imaging  
 - Build a clean and reproducible pipeline  
-- Prepare for research or PhD-level work  
+ 
 
 ---
 
