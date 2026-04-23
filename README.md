@@ -10,6 +10,22 @@ This project is both a technical implementation and a learning process to deeply
 
 ---
 
+## Dataset
+
+We use the Kermany2018 OCT dataset (retinal OCT images).
+
+Even though it is a classification dataset, it is repurposed for image enhancement using domain adaptation.
+
+NB : The dataset is not included in this repository due to size constraints.
+
+You can download it here:
+https://www.kaggle.com/datasets/paultimothymooney/kermany2018
+
+Then place it in:
+data/raw/
+
+---
+
 ## Problem Statement
 
 The Kermany2018 OCT dataset is originally designed for classification tasks and does not provide:
@@ -54,21 +70,6 @@ This approach allows:
 
 It reflects real-world medical constraints where paired data is rare.
 
----
-
-## Dataset
-
-We use the Kermany2018 OCT dataset (retinal OCT images).
-
-Even though it is a classification dataset, it is repurposed for image enhancement using domain adaptation.
-
-NB : The dataset is not included in this repository due to size constraints.
-
-You can download it here:
-https://www.kaggle.com/datasets/paultimothymooney/kermany2018
-
-Then place it in:
-data/raw/
 
 ---
 
