@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "medical-gan-oct"
+version = "0.1.0"
+description = "CycleGAN with CBAM attention for OCT image enhancement"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Marwane Belhamra" }]
+
+# Runtime deps stay in requirements.txt for now; mirror them here later if needed.
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
