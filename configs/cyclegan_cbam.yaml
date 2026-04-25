@@ -1,0 +1,31 @@
+# CycleGAN with CBAM — default config
+
+data:
+  domain_a: data/processed/domain_A
+  domain_b: data/processed/domain_B
+  image_size: 256
+  batch_size: 1            # CycleGAN works best with batch_size=1
+  num_workers: 4
+
+model:
+  ngf: 64
+  ndf: 64
+  n_resnet: 9
+  use_cbam: true
+
+training:
+  device: auto             # auto | cpu | mps | cuda
+  n_epochs: 200
+  decay_start: 100         # constant LR until this epoch, then linear decay to 0
+  lr: 2.0e-4
+  beta1: 0.5
+  lambda_cyc: 10.0
+  lambda_id: 5.0
+  pool_size: 50
+
+logging:
+  log_every: 50            # batches between progress-bar updates
+  sample_every: 1          # epochs between saved sample grids
+  ckpt_every: 10           # epochs between saved checkpoints
+  ckpt_dir: checkpoints
+  sample_dir: logs/samples
