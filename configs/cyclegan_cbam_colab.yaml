@@ -1,0 +1,33 @@
+# CycleGAN with CBAM — Colab GPU config
+# Same hyperparameters as the local config, but device=cuda and
+# more workers (Colab usually exposes 2 vCPUs, sometimes more).
+
+data:
+  domain_a: data/processed/domain_A
+  domain_b: data/processed/domain_B
+  image_size: 256
+  batch_size: 1            # Keep at 1 to match original CycleGAN. Try 4 for speed if VRAM allows.
+  num_workers: 2
+
+model:
+  ngf: 64
+  ndf: 64
+  n_resnet: 9
+  use_cbam: true
+
+training:
+  device: cuda
+  n_epochs: 200
+  decay_start: 100
+  lr: 2.0e-4
+  beta1: 0.5
+  lambda_cyc: 10.0
+  lambda_id: 5.0
+  pool_size: 50
+
+logging:
+  log_every: 50
+  sample_every: 1
+  ckpt_every: 10
+  ckpt_dir: checkpoints
+  sample_dir: logs/samples
