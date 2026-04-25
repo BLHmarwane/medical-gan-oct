@@ -31,3 +31,9 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Claude Code worktrees
+.claude/
+
+# Data archives (uploaded to Drive instead)
+*.zip
