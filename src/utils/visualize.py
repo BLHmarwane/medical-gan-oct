@@ -1,6 +1,6 @@
 """Quick sanity-check viewer for the unpaired OCT dataset.
 
-Run:  python -m src.visualize
+Run:  python -m src.utils.visualize
 Shows one batch: top row = degraded (A), bottom row = clean (B).
 """
 from pathlib import Path
@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import DataLoader
 
-from src.dataset import UnpairedOCTDataset
+from src.data.dataset import UnpairedOCTDataset
 
 
 def denormalize(tensor: torch.Tensor) -> torch.Tensor:
@@ -40,7 +40,7 @@ def show_batch(batch: dict, n: int = 4) -> None:
 if __name__ == "__main__":
     torch.manual_seed(0)  # reproducible random pairings
 
-    base = Path(__file__).resolve().parent.parent
+    base = Path(__file__).resolve().parents[2]  # src/utils/visualize.py -> project root
     dataset = UnpairedOCTDataset(
         root_a=base / "data" / "processed" / "domain_A",
         root_b=base / "data" / "processed" / "domain_B",
