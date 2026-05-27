@@ -55,7 +55,7 @@ Adding **CBAM** (Channel + Spatial attention) on top tells the network "focus on
 | 9 | Trainer | `src/training/trainer.py` | One full G + D update per call |
 | 10 | Entry point | `scripts/train.py`, `configs/cyclegan_cbam.yaml` | One-command training |
 | 11 | Colab integration | `notebooks/train_colab.ipynb`, `configs/cyclegan_cbam_demo.yaml` | Public clone, GPU demo training, Drive persistence |
-| 12 | Evaluation + inference | `scripts/evaluate.py`, `scripts/infer.py` | PSNR/SSIM and visual panels for interview demos |
+| 12 | Evaluation + inference | `scripts/evaluate.py`, `scripts/infer.py` | PSNR/SSIM and visual panels for experimental analysis |
 
 ---
 

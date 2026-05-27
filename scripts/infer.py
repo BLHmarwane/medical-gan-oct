@@ -72,15 +72,14 @@ def main() -> None:
 
     output = project_root / args.output
     output.parent.mkdir(parents=True, exist_ok=True)
-    fig, axes = plt.subplots(1, len(panels), figsize=(4 * len(panels), 4))
+    fig, axes = plt.subplots(1, len(panels), figsize=(4 * len(panels), 4), constrained_layout=True)
     if len(panels) == 1:
         axes = [axes]
     for ax, (title, image) in zip(axes, panels):
         ax.imshow(image, cmap="gray", vmin=0, vmax=1)
-        ax.set_title(title)
+        ax.set_title(title, pad=10)
         ax.axis("off")
-    fig.tight_layout()
-    fig.savefig(output, dpi=160)
+    fig.savefig(output, dpi=160, bbox_inches="tight", pad_inches=0.08)
     plt.close(fig)
     print(f"saved: {output}")
 
