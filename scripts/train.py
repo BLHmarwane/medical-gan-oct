@@ -6,6 +6,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import csv
 from pathlib import Path
 
 import torch
@@ -41,6 +42,7 @@ def save_samples(
     with torch.no_grad():
         a = batch["A"][:n].to(trainer.device)
         b = batch["B"][:n].to(trainer.device)
+        n = min(n, a.size(0), b.size(0))
         fake_b = trainer.G_AB(a)
         fake_a = trainer.G_BA(b)
         rec_a = trainer.G_BA(fake_b)
@@ -101,26 +103,46 @@ def main() -> None:
     sample_dir = project_root / cfg["logging"]["sample_dir"]
     ckpt_dir.mkdir(parents=True, exist_ok=True)
     sample_dir.mkdir(parents=True, exist_ok=True)
+    losses_path = ckpt_dir / "losses.csv"
 
-    # Fixed batch reused for every sample grid (so we can see progression).
-    sample_batch = next(iter(loader))
+    # Fixed multi-image batch reused for every sample grid, independent of train batch size.
+    sample_count = min(cfg["logging"].get("sample_count", 4), len(dataset))
+    sample_loader = DataLoader(dataset, batch_size=sample_count, shuffle=False, num_workers=0)
+    sample_batch = next(iter(sample_loader))
 
     # --- Train loop ---
     n_epochs = cfg["training"]["n_epochs"]
     log_every = cfg["logging"]["log_every"]
+    fieldnames = ["epoch", "G", "G_gan_AB", "G_gan_BA", "G_cyc", "G_id", "D_A", "D_B"]
+    with losses_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+
     for epoch in range(n_epochs):
         pbar = tqdm(loader, desc=f"epoch {epoch + 1}/{n_epochs}")
+        epoch_losses: list[dict[str, float]] = []
         for step, batch in enumerate(pbar):
             losses = trainer.train_step(batch["A"], batch["B"])
+            epoch_losses.append(losses)
             if step % log_every == 0:
                 pbar.set_postfix({k: f"{v:.2f}" for k, v in losses.items()})
 
         trainer.step_schedulers()
+        mean_losses = {
+            key: sum(row[key] for row in epoch_losses) / len(epoch_losses)
+            for key in epoch_losses[0]
+        }
+        with losses_path.open("a", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writerow({"epoch": epoch + 1, **mean_losses})
 
         if (epoch + 1) % cfg["logging"]["sample_every"] == 0:
             save_samples(
                 trainer, sample_batch, sample_dir / f"epoch_{epoch + 1:03d}.png"
             )
+
+        latest_path = ckpt_dir / "latest.pt"
+        torch.save(trainer.state_dict(), latest_path)
 
         if (epoch + 1) % cfg["logging"]["ckpt_every"] == 0:
             torch.save(trainer.state_dict(), ckpt_dir / f"epoch_{epoch + 1:03d}.pt")

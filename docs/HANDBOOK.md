@@ -8,8 +8,8 @@
 
 ## TL;DR — Where we are right now
 
-- **Last updated**: 2026-04-26
-- **Phase**: ✅ Full pipeline implemented · ⏳ first GPU training run pending
+- **Last updated**: 2026-05-27
+- **Phase**: ✅ Full prototype implemented · ⏳ longer GPU validation pending
 - **What works**:
   - Synthetic degradation pipeline (clean OCT → degraded OCT)
   - Unpaired Dataset + DataLoader
@@ -18,10 +18,13 @@
   - All four CycleGAN losses (adversarial, cycle, identity, ×2 directions)
   - Image replay buffer for D stability
   - Trainer that orchestrates one full G + D update
-  - YAML config + `scripts/train.py` entry point
-  - Colab notebook with Drive integration
-- **What's blocked**: Colab can't `git clone` the private repo without a Personal Access Token. See **[Colab setup](#colab-setup-private-repo)** below.
-- **Next concrete step**: Set up the PAT, run 200 epochs on Colab T4 (~100 min), inspect sample grids.
+  - YAML configs + `scripts/train.py` entry point
+  - Colab notebook with public GitHub clone and Drive integration
+  - `losses.csv`, `latest.pt`, checkpoints, fixed sample grids
+  - Exploratory PSNR/SSIM evaluation (`scripts/evaluate.py`)
+  - Single-image visual inference panels (`scripts/infer.py`)
+- **What's still pending**: long GPU training, robust clinical validation, and a completed CBAM ablation.
+- **Next concrete step**: run the demo config on Colab GPU, inspect sample grids, then evaluate `latest.pt`.
 
 ---
 
@@ -51,7 +54,8 @@ Adding **CBAM** (Channel + Spatial attention) on top tells the network "focus on
 | 8 | Replay buffer | `src/training/buffer.py` | Stabilizes D by mixing fresh and historical fakes |
 | 9 | Trainer | `src/training/trainer.py` | One full G + D update per call |
 | 10 | Entry point | `scripts/train.py`, `configs/cyclegan_cbam.yaml` | One-command training |
-| 11 | Colab integration | `notebooks/train_colab.ipynb`, `configs/cyclegan_cbam_colab.yaml` | GPU training with Drive persistence |
+| 11 | Colab integration | `notebooks/train_colab.ipynb`, `configs/cyclegan_cbam_demo.yaml` | Public clone, GPU demo training, Drive persistence |
+| 12 | Evaluation + inference | `scripts/evaluate.py`, `scripts/infer.py` | PSNR/SSIM and visual panels for interview demos |
 
 ---
 
@@ -217,63 +221,26 @@ If G dominates: usually fine — let it run; D will catch up.
 
 ---
 
-## 10. What's next (planned, not yet built)
+## 10. What's next
 
-1. **First successful Colab run** — get the PAT working, train 200 epochs, look at the samples.
-2. **Evaluation script** (`scripts/evaluate.py`) — compute PSNR / SSIM between `G_AB(A_test)` and the corresponding clean image (which exists since we synthetically degraded). Quantitative numbers for the thesis.
-3. **Inference script** (`scripts/infer.py`) — translate a single image with a saved checkpoint. For demo / figures.
-4. **Ablation: CBAM on vs. off** — rerun training with `use_cbam: false` and compare PSNR/SSIM. Justifies the CBAM addition in the paper.
-5. **Scale to full Kermany dataset** — currently 100 images; full has thousands per class. Should give much better generalization.
-6. **Optional: perceptual loss** (LPIPS or VGG features) — sometimes improves perceived quality even when PSNR is similar.
+1. **Run the public Colab demo** — use `configs/cyclegan_cbam_demo.yaml`, inspect samples, evaluate `checkpoints/demo/latest.pt`.
+2. **Longer training** — train 200 epochs or more on GPU, ideally with more than the current 100-image subset.
+3. **Ablation: CBAM on vs. off** — run `configs/cyclegan_no_cbam_demo.yaml` and compare PSNR/SSIM only after both runs are complete.
+4. **Scale to full Kermany dataset** — current demo data is intentionally small; full data should improve generalization.
+5. **Optional: perceptual loss** (LPIPS or VGG features) — potentially improves perceived quality even when PSNR is similar.
 
 ---
 
-## 11. Colab setup (private repo)
+## 11. Colab setup (public repo)
 
-Your repo is private. Colab can't `git clone` it without authentication. The clean fix: a **Personal Access Token (PAT)** stored in Colab's secret vault.
+The repository is designed to be public, so Colab can clone it directly without extra authentication.
 
-### Step 1 — Create a PAT on GitHub
+1. Open `notebooks/train_colab.ipynb` from the README Colab badge.
+2. Upload `processed.zip` to `MyDrive/processed.zip`. The zip should contain `data/processed/domain_A` and `data/processed/domain_B`.
+3. Select **Runtime → Change runtime type → GPU**.
+4. Run all cells.
 
-1. Go to **GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)**.
-2. Click **Generate new token (classic)**.
-3. **Note**: "Colab clone access for medical-gan-oct".
-4. **Expiration**: 90 days (you can rotate later).
-5. **Scopes**: tick **`repo`** (full control of private repositories). That's all you need.
-6. Click **Generate token**.
-7. **Copy the token immediately** — it starts with `ghp_…` and GitHub never shows it again.
-
-### Step 2 — Store it in Colab secrets
-
-1. In your Colab notebook, click the **🔑 key icon** in the left sidebar.
-2. Click **Add new secret**.
-3. **Name**: `GITHUB_TOKEN`. **Value**: paste your `ghp_…` token.
-4. Toggle **Notebook access** ON.
-
-The token is now available to this notebook only. It never appears in cell outputs and never gets committed if you save the notebook.
-
-### Step 3 — Replace cell 3 in the notebook
-
-When you reopen the Colab notebook, cell 3 is the `git clone` cell. Replace its content with:
-
-```python
-from google.colab import userdata
-token = userdata.get('GITHUB_TOKEN')
-
-%cd /content
-!rm -rf medical-gan-oct
-!git clone https://{token}@github.com/BLHmarwane/medical-gan-oct.git
-%cd medical-gan-oct
-!pip install -q -r requirements.txt
-!pip install -q -e .
-```
-
-### Step 4 — Restart runtime and run all
-
-1. **Runtime → Disconnect and delete runtime** (clean slate).
-2. **Runtime → Change runtime type → GPU → Save**.
-3. **Runtime → Run all**.
-
-The clone now works because `https://<TOKEN>@github.com/...` authenticates as you.
+The notebook installs the repo, links checkpoints/logs to Drive, runs the short demo config, previews the latest sample grid, and computes exploratory PSNR/SSIM.
 
 ---
 

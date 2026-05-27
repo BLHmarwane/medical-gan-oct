@@ -1,165 +1,137 @@
-# Medical Image Enhancement using GANs (CycleGAN with CBAM)
+# Medical GAN OCT - CycleGAN + CBAM
 
-## Overview
+Prototype for unsupervised retinal OCT image enhancement with a CycleGAN architecture augmented with CBAM attention.
 
-This project focuses on understanding and applying Generative Adversarial Networks (GANs) in the context of medical imaging, specifically Optical Coherence Tomography (OCT).
+The goal is to learn a mapping from synthetically degraded OCT scans to cleaner retinal OCT images while keeping the workflow reproducible enough for portfolio review and interview discussion.
 
-The goal is to develop a CycleGAN-based model capable of enhancing OCT images by learning a mapping between degraded and high-quality image domains.
+[Open in Colab](https://colab.research.google.com/github/BLHmarwane/medical-gan-oct/blob/main/notebooks/train_colab.ipynb)
 
-This project is both a technical implementation and a learning process to deeply understand generative models.
+## Current Status
 
----
+Implemented:
+
+- synthetic OCT degradation pipeline: speckle noise, Gaussian noise, blur, contrast reduction;
+- unpaired CycleGAN dataset with tensors normalized to `[-1, 1]`;
+- ResNet generator with optional CBAM attention in residual blocks;
+- PatchGAN discriminator, LSGAN loss, cycle loss, identity loss, replay buffer;
+- training entry point with YAML configs, checkpoints, `latest.pt`, sample grids, and `losses.csv`;
+- Colab notebook for a short GPU demo run;
+- exploratory PSNR/SSIM evaluation on synthetic A_i/B_i pairs;
+- inference script for visual panels.
+
+Pending:
+
+- full long training run on a larger dataset;
+- clinically robust validation;
+- completed CBAM vs no-CBAM ablation;
+- comparison with supervised denoising/restoration baselines.
+
+This repository should be read as a working research prototype, not a validated clinical model.
 
 ## Dataset
 
-We use the Kermany2018 OCT dataset (retinal OCT images).
+The project uses the Kermany2018 retinal OCT dataset:
 
-Even though it is a classification dataset, it is repurposed for image enhancement using domain adaptation.
-
-NB : The dataset is not included in this repository due to size constraints.
-
-You can download it here:
 https://www.kaggle.com/datasets/paultimothymooney/kermany2018
 
-Then place it in:
-data/raw/
+The dataset is not committed to GitHub. Download it separately and place it under:
 
----
-
-## Problem Statement
-
-The Kermany2018 OCT dataset is originally designed for classification tasks and does not provide:
-
-- Paired low-quality and high-quality images  
-- A clear separation between degraded and enhanced images  
-
-However, CycleGAN requires two domains:
-
-- Domain A: degraded images  
-- Domain B: clean images  
-
-This makes direct application impossible.
-
----
-
-## Proposed Solution
-
-We solve this problem using a synthetic degradation strategy.
-
-- Domain B (target): original OCT images  
-- Domain A (input): artificially degraded versions of the same images  
-
-Degradations applied:
-
-- Speckle noise (relevant for OCT imaging)  
-- Gaussian noise  
-- Blur (optical degradation)  
-- Contrast reduction  
-
----
-
-## Why This Approach Works
-
-This approach allows:
-
-- Creation of realistic degraded data  
-- Full control over experiments  
-- Reproducibility  
-- Quantitative evaluation (PSNR, SSIM)  
-- Training in an unpaired setting (CycleGAN)  
-
-It reflects real-world medical constraints where paired data is rare.
-
-
----
-
-## Data Preparation
-
-The script `degrade_images.py` generates the dataset for training:
-
-- Domain A → degraded images  
-- Domain B → original images  
-
-This creates the two domains required for CycleGAN training.
-
----
-
-## Project Structure
-
-```
-medical-gan-oct/
-├── configs/                  YAML hyperparameter files
-│   ├── cyclegan_cbam.yaml          (local / MPS)
-│   └── cyclegan_cbam_colab.yaml    (Colab / CUDA)
-├── data/
-│   ├── raw/                  OCT2017 (download separately)
-│   └── processed/
-│       ├── domain_A/         degraded images
-│       └── domain_B/         clean images
-├── notebooks/
-│   └── train_colab.ipynb     Colab training notebook
-├── scripts/
-│   └── train.py              training entry point
-├── src/
-│   ├── data/                 dataset, degradation pipeline
-│   ├── models/               generator, discriminator, CBAM
-│   ├── losses/               adversarial, cycle, identity
-│   ├── training/             trainer, image replay buffer
-│   └── utils/                visualization helpers
-├── checkpoints/              saved model weights (gitignored)
-├── logs/samples/             sample translations per epoch (gitignored)
-├── pyproject.toml
-├── requirements.txt
-└── README.md
+```text
+data/raw/OCT2017/
 ```
 
----
+The training domains are:
 
-## Training
+```text
+data/processed/domain_A/   degraded OCT images
+data/processed/domain_B/   clean OCT images
+```
 
-### Local (Mac MPS / CPU)
+`domain_A` and `domain_B` are created from the same source images, so evaluation can report exploratory PSNR/SSIM against the clean synthetic target. Training still uses CycleGAN-style unpaired sampling.
+
+## Interview Demo
+
+Setup:
 
 ```bash
 pip install -r requirements.txt
 pip install -e .
-python scripts/train.py --config configs/cyclegan_cbam.yaml
 ```
 
-### Colab GPU (recommended for full runs)
+Train the short demo run:
 
-1. Upload `data/processed/` to Drive at `My Drive/medical-gan-oct/data/processed/`.
-2. Open `notebooks/train_colab.ipynb` in Colab.
-3. Runtime → Change runtime type → GPU.
-4. Run all cells.
+```bash
+python scripts/train.py --config configs/cyclegan_cbam_demo.yaml
+```
 
-Checkpoints and sample PNGs stream directly to Drive.
+Evaluate PSNR/SSIM:
 
----
+```bash
+python scripts/evaluate.py \
+  --config configs/cyclegan_cbam_demo.yaml \
+  --checkpoint checkpoints/demo/latest.pt \
+  --limit 100 \
+  --output logs/evaluation/demo_metrics.csv
+```
 
-## Technical Stack
+Generate a visual panel:
 
-- Python 3.10+
-- PyTorch / torchvision
-- OpenCV, Pillow, NumPy
-- Matplotlib (visualization)
-- PyYAML, tqdm (training)
+```bash
+python scripts/infer.py \
+  --config configs/cyclegan_cbam_demo.yaml \
+  --checkpoint checkpoints/demo/latest.pt \
+  --image data/processed/domain_A/A_0.png \
+  --clean data/processed/domain_B/B_0.png \
+  --output logs/inference/demo_panel.png
+```
 
----
+For Colab, open the notebook from the badge above, upload `processed.zip` to `MyDrive/processed.zip`, select a GPU runtime, and run all cells.
 
+## Architecture
 
-## Objective
+Generator:
 
-The objective of this project is to:
+```text
+1x256x256 OCT
+  -> 7x7 conv stem
+  -> 2 downsampling blocks
+  -> 9 ResNet blocks with CBAM
+  -> 2 upsampling blocks
+  -> tanh output in [-1, 1]
+```
 
-- Understand GANs deeply  
-- Apply them to medical imaging  
-- Build a clean and reproducible pipeline  
- 
+Discriminator:
 
----
+```text
+PatchGAN discriminator with raw logits for LSGAN training
+```
+
+Training losses:
+
+- adversarial LSGAN loss for both directions;
+- cycle consistency L1 loss;
+- identity L1 loss;
+- image replay buffer for discriminator stability.
+
+## Project Layout
+
+```text
+configs/          Training configs, including demo and no-CBAM ablation configs
+docs/             Project handbook and interview notes
+notebooks/        Public Colab training notebook
+scripts/          train.py, evaluate.py, infer.py
+src/              Data, models, losses, training, visualization
+checkpoints/      Ignored training checkpoints
+logs/             Ignored samples, metrics, inference panels
+data/             Ignored raw and processed datasets
+```
+
+## Honest Pitch
+
+This is a prototype of unsupervised retinal OCT restoration. I built the full CycleGAN+CBAM pipeline, the synthetic degradation strategy, the Colab training workflow, and exploratory PSNR/SSIM evaluation. The remaining work is to run longer GPU experiments, complete the CBAM ablation, and validate the method on a broader dataset before making any clinical claim.
 
 ## Author
 
-Marwane BEL HAMRA  
-Engineer in Computer Vision and Medical Image Processing  
-Université Clermont Auvergne
+Marwane BELHAMRA
+
+Biomedical engineer - computer vision and medical image processing

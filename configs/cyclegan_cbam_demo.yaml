@@ -1,0 +1,33 @@
+# Short Colab demo config for interview preparation.
+# Produces sample grids, checkpoints, and a losses.csv quickly.
+
+data:
+  domain_a: data/processed/domain_A
+  domain_b: data/processed/domain_B
+  image_size: 256
+  batch_size: 1
+  num_workers: 2
+
+model:
+  ngf: 64
+  ndf: 64
+  n_resnet: 9
+  use_cbam: true
+
+training:
+  device: cuda
+  n_epochs: 40
+  decay_start: 20
+  lr: 2.0e-4
+  beta1: 0.5
+  lambda_cyc: 10.0
+  lambda_id: 5.0
+  pool_size: 50
+
+logging:
+  log_every: 50
+  sample_every: 1
+  sample_count: 4
+  ckpt_every: 10
+  ckpt_dir: checkpoints/demo
+  sample_dir: logs/demo_samples
